@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+
+# Exit on error
+set -e
+
+# -------------------------------
+# Configuration
+# -------------------------------
+STACK_NAME="NetBootVPC"
+TEMPLATE_FILE="template.yaml"
+REGION="us-east-1"
+
+# Parameter values (edit as needed)
+AVAILABILITY_ZONE="us-east-1a"
+VPC_CIDR="10.200.123.0/24"
+PUBLIC_SUBNET_CIDR="10.200.123.0/28"
+PRIVATE_SUBNET_CIDR="10.200.123.16/28"
+
+# -------------------------------
+# Deploy the CloudFormation stack
+# -------------------------------
+echo "Deploying CloudFormation stack: $STACK_NAME"
+echo "Using template file: $TEMPLATE_FILE"
+
+aws cloudformation deploy \
+  --stack-name "$STACK_NAME" \
+  --template-file "$TEMPLATE_FILE" \
+  --region "$REGION" \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --parameter-overrides \
+    AvailabilityZone="$AVAILABILITY_ZONE" \
+    VpcCidrBlock="$VPC_CIDR" \
+    PublicSubnetCidr="$PUBLIC_SUBNET_CIDR" \
+    PrivateSubnetCidr="$PRIVATE_SUBNET_CIDR"
+
+
+echo "Waiting for stack creation to complete..."
+aws cloudformation wait stack-create-complete \
+  --stack-name "$STACK_NAME" \
+  --region "$REGION"
+
+echo "Stack $STACK_NAME deployed successfully."
+
+# Print outputs
+aws cloudformation describe-stacks \
+  --stack-name "$STACK_NAME" \
+  --region "$REGION" \
+  --query "Stacks [0] .Outputs" \
+  --output table
+
+
+# This section was originally created from chatGPT.
+#
+# if [ $? -eq 0 ]; then
+#  echo "✅ Stack $STACK_NAME deployed successfully."
+# else
+#   echo "❌ Stack deployment failed."
+#   exit 1
+# fi
